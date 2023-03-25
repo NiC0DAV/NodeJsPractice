@@ -1,4 +1,6 @@
+const { matchedData } = require('express-validator');
 const { tracksModel } = require('../models/index');
+const { handleHttpResponse } = require('../utils/handleResponse');
 
 /**
  * Metodo usado para obtener todos los elementos que se hallen en la base de datos de la tabla tracks
@@ -7,9 +9,23 @@ const { tracksModel } = require('../models/index');
  * @returns 
  */
 const getItems = async (req, res) => {
-    const data = await tracksModel.find({});
-
-    res.status(200).send({ data: data });
+    let response;
+    try {
+        const data = await tracksModel.find({});
+        
+        response = {
+            message: 'Data obtained successfully.',
+            code: 200,
+            data: data
+        }
+        handleHttpResponse(res, response);
+    } catch (error) {
+        response = {
+            message: 'Something went wrong while we were obtaining the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
 }
 
 /**
@@ -27,14 +43,31 @@ const getItem = async (req, res) => {
  * @param {*} res 
  */
 const createItem = async (req, res) => {
-    const { body } = req;
-    let tracksArray = await tracksModel.find({ name: body.name });
+    const body = matchedData(req);
     let response = {};
-    
-    response = tracksArray.length ? { status: 'Error', message: 'The information of the track already exists.', code: 400 }
-        : { data: await tracksModel.create(body), message: 'The track has been saved successfully.', status: 'Success', code: 200 };
 
-    res.status(response.code).send({ ...response });
+    try {
+        let tracksArray = await tracksModel.find({ name: body.name });
+    
+        response = tracksArray.length ? {
+            code: 400,
+            status: 'Error',
+            message: 'The information of the track already exists.'
+        } : {
+            code: 200,
+            status: 'Success',
+            message: 'The track has been saved successfully.',
+            data: await tracksModel.create(body)
+        };
+        
+        handleHttpResponse(res, ...response);
+    } catch (error) {
+        response = {
+            message: 'Something went wrong registrating the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
 }
 
 /**

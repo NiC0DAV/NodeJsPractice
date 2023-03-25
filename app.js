@@ -20,6 +20,14 @@ const port = process.env.PORT || 3000;
 app.use(bodyParser.urlencoded({extended: true}));
 app.use(bodyParser.json({ limit: '50mb', extended: true }));
 
+app.use(cors())
+
+/**
+ * Con el uso de express.static le decimos a nuestro app.js que haga publica la ruta que le especifiquemos
+ * y que de esta manera logremos acceder a TODO lo que este dentro de esta ruta desde la URL.
+ */
+app.use(express.static("storage"))
+
 /**
 * Ruta api llama a todas los conjuntos de rutas de la carpeta routes que importa el archivo index.js
 */
