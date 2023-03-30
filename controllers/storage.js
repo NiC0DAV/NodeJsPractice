@@ -3,8 +3,12 @@ const fs = require('fs')
 const { promisify } = require('util');
 const { storagesModel } = require('../models/index');
 const { validateMimeType } = require('../utils/helpers');
+const { handleHttpResponse } = require('../utils/handleResponse');
+const { matchedData } = require('express-validator');
+
 
 const PUBLIC_URI = process.env.PUBLIC_URI;
+const MEDIA_PATH = `${__dirname}/../storage`;
 const unlinkAsync = promisify(fs.unlink);
 
 /**
@@ -14,9 +18,22 @@ const unlinkAsync = promisify(fs.unlink);
  * @returns 
  */
 const getItems = async (req, res) => {
-    const data = await storagesModel.find({});
+    try {
+        const data = await storagesModel.find({});;
 
-    res.status(200).send({ data: data });
+        const response = {
+            message: 'Data obtained successfully.',
+            code: 200,
+            data: data
+        }
+        handleHttpResponse(res, response);
+    } catch (error) {
+        const response = {
+            message: 'Something went wrong while we were obtaining the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
 }
 
 /**
@@ -25,7 +42,24 @@ const getItems = async (req, res) => {
  * @param {*} res 
  */
 const getItem = async (req, res) => {
-    //
+    try {
+        const { id } = matchedData(req);
+
+        const response = {
+            message: 'Storage element obtained successfully.',
+            code: 200,
+            data: await storagesModel.findById(id)
+        }
+
+        handleHttpResponse(res, response);
+    } catch (error) {
+        const response = {
+            status: 'Error',
+            message: 'Something went wrong while we were obtaining the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
 }
 
 /**
@@ -72,7 +106,22 @@ const createItem = async (req, res) => {
  * @param {*} res 
  */
 const updateItem = async (req, res) => {
-    //
+    try {
+        const { file } = req;
+        const fileData = {
+          filename: file.filename,
+          url: `${PUBLIC_URL}/${file.filename}`,
+        };
+        const data = await storageModel.create(fileData);
+        res.status(201).send({ data });
+    } catch (e) {        
+        const response = {
+            code: 500,
+            message: "Something went wrong"
+        }
+
+        handleHttpError(res, response);
+      }
 }
 
 /**
@@ -81,7 +130,28 @@ const updateItem = async (req, res) => {
  * @param {*} res 
  */
 const deleteItem = async (req, res) => {
-    //
+    try {
+        const { id } = matchedData(req);
+        const dataFile = await storagesModel.findById(id);
+        const deleteResponse = await storagesModel.delete({ _id: id });
+        const { filename } = dataFile;
+        const filePath = `${MEDIA_PATH}/${filename}`; //TODO c:/miproyecto/file-1232.png
+    
+        // fs.unlinkSync(filePath);
+        const data = {
+          filePath,
+          deleted: deleteResponse.matchedCount,
+        };
+    
+        res.status(200).send({ data });
+    } catch (e) {
+        const response = {
+            code: 500,
+            message: "Something went wrong"
+        }
+
+        handleHttpResponse(res, response);
+    }
 }
 
 module.exports = { getItems, getItem, createItem, updateItem, deleteItem }

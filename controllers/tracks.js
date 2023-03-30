@@ -9,18 +9,17 @@ const { handleHttpResponse } = require('../utils/handleResponse');
  * @returns 
  */
 const getItems = async (req, res) => {
-    let response;
     try {
         const data = await tracksModel.find({});
 
-        response = {
+        const response = {
             message: 'Data obtained successfully.',
             code: 200,
             data: data
         }
         handleHttpResponse(res, response);
     } catch (error) {
-        response = {
+        const response = {
             message: 'Something went wrong while we were obtaining the data.',
             code: 503
         }
