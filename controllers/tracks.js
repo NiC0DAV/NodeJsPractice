@@ -12,7 +12,7 @@ const getItems = async (req, res) => {
     let response;
     try {
         const data = await tracksModel.find({});
-        
+
         response = {
             message: 'Data obtained successfully.',
             code: 200,
@@ -34,7 +34,24 @@ const getItems = async (req, res) => {
  * @param {*} res 
  */
 const getItem = async (req, res) => {
-    //
+    try {
+        const { id } = matchedData(req);
+
+        const response = {
+            message: 'Track obtained successfully.',
+            code: 200,
+            data: await tracksModel.findById(id)
+        }
+
+        handleHttpResponse(res, response);
+    } catch (error) {
+        const response = {
+            status: 'Error',
+            message: 'Something went wrong while we were obtaining the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
 }
 
 /**
@@ -43,13 +60,11 @@ const getItem = async (req, res) => {
  * @param {*} res 
  */
 const createItem = async (req, res) => {
-    const body = matchedData(req);
-    let response = {};
-
     try {
+        const body = matchedData(req);
         let tracksArray = await tracksModel.find({ name: body.name });
-    
-        response = tracksArray.length ? {
+
+        const response = tracksArray.length ? {
             code: 400,
             status: 'Error',
             message: 'The information of the track already exists.'
@@ -59,10 +74,10 @@ const createItem = async (req, res) => {
             message: 'The track has been saved successfully.',
             data: await tracksModel.create(body)
         };
-        
-        handleHttpResponse(res, ...response);
+
+        handleHttpResponse(res, response);
     } catch (error) {
-        response = {
+        const response = {
             message: 'Something went wrong registrating the data.',
             code: 503
         }
@@ -76,7 +91,37 @@ const createItem = async (req, res) => {
  * @param {*} res 
  */
 const updateItem = async (req, res) => {
-    //
+    try {
+        const body = matchedData(req);
+        const tracks = await tracksModel.findOne({ name: body.name });
+
+        if (!tracks) {
+            const { id, ...body } = matchedData(req);
+            console.log(body);
+            const response = {
+                code: 200,
+                status: 'Success',
+                message: 'The track has been saved successfully.',
+                data: await tracksModel.findOneAndUpdate(body.id, body)
+            }
+
+            handleHttpResponse(res, response);
+        } else {
+            const response = {
+                code: 400,
+                status: 'Error',
+                message: 'The information of the track already exists.'
+            }
+            handleHttpResponse(res, response);
+        }
+
+    } catch (error) {
+        const response = {
+            message: 'Something went wrong registrating the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
 }
 
 /**
@@ -85,8 +130,25 @@ const updateItem = async (req, res) => {
  * @param {*} res 
  */
 const deleteItem = async (req, res) => {
-    //
-}
+    try {
+        const { id } = matchedData(req);
 
+        console.log(id);
+        const response = {
+            message: 'Track deleted successfully.',
+            code: 200,
+            data: await tracksModel.delete({_id: id})
+        }
+
+        handleHttpResponse(res, response);
+    } catch (error) {
+        const response = {
+            status: 'Error',
+            message: 'Something went wrong while we were deleting the data.',
+            code: 503
+        }
+        handleHttpResponse(res, response);
+    }
+}
 
 module.exports = { getItems, getItem, createItem, updateItem, deleteItem }
